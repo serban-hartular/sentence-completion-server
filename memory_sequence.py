@@ -12,9 +12,9 @@ import random
 random.seed()
 
 class MemorySequence(QuestionSequenceFactory):
-    CLASS_NAME = 'FR: Secvente'
+    CLASS_NAME = 'MEM: Secvente'
     SCREEN_KIND = 'memory-sequence'
-    COLOR = '#11aa11'
+    COLOR = '#AA00AA'
 
     SHAPES = {"square", "circle", "triangle", "ellipse", "diamond"};
     SHAPE_COLORS = {"#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"}

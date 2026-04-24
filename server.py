@@ -31,7 +31,7 @@ app = Flask(__name__)
 
 from engl_question_gen import MakeQuestionSequence
 from etre_avoir import EtreAvoir, Numeros
-from vocab_simple import VocabAnimalsEn, VocabFurnitureEN, VocabSimple, VocabSimpleEN
+from vocab_simple import VocabAnimalsEn, VocabArgs, VocabFurnitureEN, VocabSimple, VocabSimpleFR, VocabSimpleEN
 from ro_timp_verb import RoVerbTenseQuestions
 from ro_subst_articol import RoNounIntruder, RoSortNouns, RoSortFromText
 from ro_subst_gen_nr import RoSortByGender
@@ -39,11 +39,13 @@ from ro_subst_gen_nr import RoSortByGender
 from sequences import SequenceFactoryRecord
 
 SequenceFactories = [SequenceFactoryRecord(*(C,)) for C in [RoSortNouns, RoNounIntruder, 
-                     MakeQuestionSequence, VocabSimpleEN, VocabAnimalsEn,
-                     Numeros,  VocabSimple,  EtreAvoir, EnHaveGot,
+                     MakeQuestionSequence, #VocabSimpleEN, VocabAnimalsEn,
+                     Numeros,  #VocabSimpleFR, 
+                     EtreAvoir, EnHaveGot,
                      RoSortByGender, RoSortFromText,RoVerbTenseQuestions,
-                     VocabFurnitureEN,RoAdjUnderline,MemorySequence,]
-]
+                     #VocabFurnitureEN,
+                     RoAdjUnderline,MemorySequence,]
+] + [SequenceFactoryRecord(factory=VocabSimple, kwargs=k) for k in VocabArgs]
 
 
 @dataclasses.dataclass
@@ -100,7 +102,7 @@ def api_sequences():
     #                                 "color":n.COLOR} for n in SequenceFactories]})
 
     lang = body.get('lang')
-    if lang not in {'en', 'ro', 'fr'}:
+    if lang not in {'en', 'ro', 'fr', 'mem'}:
         return jsonify({"ok": False, "error": f"Unknown language {lang}"}), 400
 
     return jsonify( {"sequences": [{"id":n.sequence_name, "name":n.sequence_name, "#kind":n.screen_kind,

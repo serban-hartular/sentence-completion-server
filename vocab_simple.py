@@ -3,6 +3,8 @@ import dataclasses
 
 from sequences import QuestionData, QuestionSequenceFactory
 import random
+from utils import getkwarg
+import utils
 
 @dataclasses.dataclass
 class VocabEntry:
@@ -15,6 +17,62 @@ ANIMALS_EN = ['turtle', 'budgie', 'dog', 'guinea pig', 'horse', 'mouse', 'parrot
 
 ANIMALS_EN_VOCAB = [VocabEntry(word=w, image=f'/images/en/animals/{w.replace(' ', '_')}.png',
                                pron=f'/pron/en/{w.replace(' ', '_')}.m4a') for w in ANIMALS_EN]
+
+FURNITURE_EN = ['bed', 'cupboard', 'fridge', 'mirror', 'sofa', 'cooker',
+                'curtain', 'lamp', 'rug', 'wardrobe']
+
+FURNITURE_EN_VOCAB = [VocabEntry(word=w,
+                        image=f'/images/en/furniture/{w.replace(' ', '_')}.jpeg',
+                        pron=f'/pron/en/{w.replace(' ', '_')}.m4a')
+                            for w in FURNITURE_EN]
+
+NOUNS_FR = ['fleur', 'soleil', 'stylo', 'élèves',
+                      'crayon', 'étoile', 'rose', 'métro',]
+
+def fr2nodiacritics(w : str) -> str:
+    return w.replace(' ', '_').replace('é', 'e').replace('è', 'e')
+
+NOUNS_FR_VOCAB = [VocabEntry(word=w,
+                        image=f'/images/{fr2nodiacritics(w)}.png',
+                        pron=f'/pron/fr/{fr2nodiacritics(w)}.m4a')
+                            for w in NOUNS_FR]
+
+VocabArgs = [dict(vocab=ANIMALS_EN_VOCAB, seq_name='EN: Animals Vocabulary', color=utils.ENGL_COLOR),
+             dict(vocab=FURNITURE_EN_VOCAB, seq_name='EN: Furniture Vocabulary', color=utils.ENGL_COLOR),
+             dict(vocab=NOUNS_FR_VOCAB, seq_name='FR: Vocabulaire Simple', color=utils.FR_COLOR),]
+
+class VocabSimple(QuestionSequenceFactory):
+    def __init__(self, **kwargs) -> None:
+        self.vocab : list[VocabEntry] = list(getkwarg(kwargs, 'vocab', exception='No vocab provided!'))
+        self.seq_name = getkwarg(kwargs, 'seq_name', exception='No name provided!')
+        self.screen_kind = 'vocab'
+        self.color = getkwarg(kwargs, 'color', default='#555555')
+
+        self.fit = getkwarg(kwargs, 'per_screen', default=3, typecheck=int)
+        random.shuffle(self.vocab)
+        self.index = -self.fit
+
+    def get_next_question(self, previous_was_good: bool = True) -> dict | None:
+        if previous_was_good:
+            self.index += self.fit
+        if self.index >= len(self.vocab):
+            return None
+        current_vocab = [e.word for e in self.vocab[self.index:self.index+self.fit]]
+        return dict(prompt='Potriviți cuvintele:',
+                    slotCount=len(current_vocab),
+                    targets=[{'imageId':w, 'slotIndex':i} for i, w in enumerate(current_vocab)],
+                    bankWords=current_vocab,
+                    correct=current_vocab,
+                    pronunciations={rec.word:rec.pron for rec in self.vocab if rec.word in current_vocab},
+                    images={rec.word:rec.image for rec in self.vocab if rec.word in current_vocab},
+                )
+    
+    def get_screen_kind(self) -> str:
+        return self.screen_kind
+    def get_color(self) -> str:
+        return self.color
+    def get_sequence_name(self) -> str:
+        return self.seq_name
 
 
 class VocabAnimalsEn(QuestionSequenceFactory):
@@ -55,14 +113,6 @@ class VocabAnimalsEn(QuestionSequenceFactory):
         return self.pron
     def get_images(self) -> dict:
         return self.images
-
-FURNITURE_EN = ['bed', 'cupboard', 'fridge', 'mirror', 'sofa', 'cooker',
-                'curtain', 'lamp', 'rug', 'wardrobe']
-
-FURNITURE_EN_VOCAB = [VocabEntry(word=w,
-                        image=f'/images/en/furniture/{w.replace(' ', '_')}.jpeg',
-                        pron=f'/pron/en/{w.replace(' ', '_')}.m4a')
-                            for w in FURNITURE_EN]
 
 
 class VocabFurnitureEN(VocabAnimalsEn):
@@ -106,7 +156,8 @@ class VocabSimpleEN(QuestionSequenceFactory):
                 w : f'/images/en/{w.replace(' ', '_')}.png' for w in self.vocab
         }
 
-class VocabSimple(QuestionSequenceFactory):
+
+class VocabSimpleFR(QuestionSequenceFactory):
     CLASS_NAME = 'FR: Vocabulaire Simple'
     SCREEN_KIND = 'vocab'
     COLOR = '#1111aa'
@@ -129,6 +180,8 @@ class VocabSimple(QuestionSequenceFactory):
                     targets=[{'imageId':w, 'slotIndex':i} for i, w in enumerate(vocab)],
                     bankWords=vocab,
                     correct=vocab,
+                    pronunciations={rec.word:rec.pron for rec in NOUNS_FR_VOCAB if rec.word in vocab},
+                    images={rec.word:rec.image for rec in NOUNS_FR_VOCAB if rec.word in vocab},
                 )
     
     def get_pronounciations(self) -> dict:
