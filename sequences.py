@@ -1,6 +1,15 @@
 import dataclasses
 from typing import Callable
 
+from pydantic import BaseModel
+
+
+class Payload(BaseModel):
+    done : bool
+    kind: str
+    data: dict
+    pronunciations: dict[str, str]
+    images: dict[str, str]
 
 @dataclasses.dataclass
 class QuestionData:

@@ -5,7 +5,9 @@ import random
 import time
 import uuid
 from typing import Any, Dict, Optional, Tuple
-from sequences import QuestionSequenceFactory, QuestionData
+from memory_sequence import MemorySequence
+from ro_underline_text import RoAdjUnderline
+from sequences import QuestionSequenceFactory, Payload
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -40,7 +42,7 @@ SequenceFactories = [SequenceFactoryRecord(*(C,)) for C in [RoSortNouns, RoNounI
                      MakeQuestionSequence, VocabSimpleEN, VocabAnimalsEn,
                      Numeros,  VocabSimple,  EtreAvoir, EnHaveGot,
                      RoSortByGender, RoSortFromText,RoVerbTenseQuestions,
-                     VocabFurnitureEN,]
+                     VocabFurnitureEN,RoAdjUnderline,MemorySequence,]
 ]
 
 
@@ -92,7 +94,6 @@ def _cleanup_players() -> None:
 # @app.get("/api/sequences")
 @app.post("/api/sequences")
 def api_sequences():
-    # print(', '.join([f'{k}: {request.headers.get(k)}' for k in ("X-App-Lang", "X-App-Unit")]))
     body = request.get_json(silent=True) or {}
     print(", ".join([f'{k}:{body[k]}' for k in body]))
     # return jsonify( {"sequences": [{"id":n.CLASS_NAME, "name":n.CLASS_NAME, "kind":n.SCREEN_KIND,
@@ -102,7 +103,7 @@ def api_sequences():
     if lang not in {'en', 'ro', 'fr'}:
         return jsonify({"ok": False, "error": f"Unknown language {lang}"}), 400
 
-    return jsonify( {"sequences": [{"id":n.sequence_name, "name":n.sequence_name, "kind":n.screen_kind,
+    return jsonify( {"sequences": [{"id":n.sequence_name, "name":n.sequence_name, "#kind":n.screen_kind,
                                     "color":n.color} for n in SequenceFactories
                                     if n.sequence_name.startswith(lang.upper())]})
 
@@ -129,7 +130,7 @@ def api_select():
     imags = PLAYERS[pid].seq_factory.get_images()
     
 
-    return jsonify({"ok": True, "sequenceId": seq_id, "pronunciations": pron, "images":imags})
+    return jsonify({"ok": True, "sequenceId": seq_id, }) #"pronunciations": pron, "images":imags})
 
 
 @app.post("/api/next")
@@ -149,14 +150,18 @@ def api_next():
     previous_was_good = result_data['success'] is None or bool(result_data['success'])
     next_question = pstate.seq_factory.get_next_question(previous_was_good)
 
-    print(next_question)
-
     if next_question is None:
         return {"done":True}
+    prons = next_question.pop('pronunciations') if 'pronunciations' in next_question else {}
+    imgs = next_question.pop('images') if 'images' in next_question else {}
 
-    payload = {"done":False, "data":next_question}
-
-    return jsonify(payload)
+    #payload = {"done":False, "data":next_question}
+    payload = {"done":False, "kind":pstate.seq_factory.get_screen_kind(), "data":next_question,
+               'pronunciations':prons, 'images':imgs}
+    payload = Payload(done=False, kind=pstate.seq_factory.get_screen_kind(), data=next_question,
+                      pronunciations=prons, images=imgs)
+    print(payload)
+    return payload.model_dump_json() #jsonify(payload)
 
 
 # Optional dev helper

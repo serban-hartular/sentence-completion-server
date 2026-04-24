@@ -47,6 +47,8 @@ class VocabAnimalsEn(QuestionSequenceFactory):
                     targets=[{'imageId':w, 'slotIndex':i} for i, w in enumerate(vocab)],
                     bankWords=vocab,
                     correct=vocab,
+                    pronunciations={k:v for k,v in self.get_pronounciations().items() if k in vocab},
+                    images={k:v for k,v in self.get_images().items() if k in vocab},
                 )
 
     def get_pronounciations(self) -> dict:
