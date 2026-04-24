@@ -22,7 +22,7 @@ class MemorySequence(QuestionSequenceFactory):
     def __init__(self, **kwargs) -> None:
         self.num_shapes = kwargs.get('num_shapes')
         if not self.num_shapes:
-            self.num_shapes = 3
+            self.num_shapes = 4
         self.num_q = 2
         self.count = -1
 
